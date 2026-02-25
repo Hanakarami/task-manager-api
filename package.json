@@ -4,7 +4,8 @@
   "description": "",
   "main": "index.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "build": "tsc",
+    "dev": "npm run build && node dist/index.js"
   },
   "keywords": [],
   "author": "hana",
@@ -20,6 +21,7 @@
   },
   "dependencies": {
     "@prisma/client": "^5.15.0",
+    "bcrypt": "^6.0.0",
     "cors": "^2.8.6",
     "express": "^5.2.1",
     "prisma": "^5.15.0"

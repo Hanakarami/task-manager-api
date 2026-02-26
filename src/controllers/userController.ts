@@ -17,16 +17,3 @@ export const getUsers = async (req: any, res: any) => {
     handleError(res, err, "Failed to fetch users");
   }
 };
-
-export const createUser = async (req: any, res: any) => {
-  try {
-    const { name, email, password } = req.body;
-    const hashedPass = await bcrypt.hash(password,12);
-    const newUser = await prisma.user.create({
-      data: { name, email, password:hashedPass },
-    });
-    res.status(201).json(newUser);
-  } catch (err: any) {
-    handleError(res, err, "Failed to create user");
-  }
-};

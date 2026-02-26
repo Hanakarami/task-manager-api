@@ -22,18 +22,37 @@ export const signup = async (req: Request, res: Response) => {
     const accessToken = jwt.sign({ userId: newUser.id }, ACCESS_TOKEN_SECRET, { expiresIn: "15m" });
     const refreshToken = jwt.sign({ userId: newUser.id }, REFRESH_TOKEN_SECRET, { expiresIn: "7d" });
 
+    const tokenHash = await bcrypt.hash(refreshToken, 12);
+
     const expiresIn = 60 * 60 * 24 * 30; 
     const expiresAt = new Date(Date.now() + expiresIn * 1000);
 
     await prisma.refreshToken.create({
       data: {
-        tokenHash: refreshToken,
+        tokenHash,
         userId: newUser.id,
         expiresAt
       },
     });
 
-    res.status(201).json({ user: { id: newUser.id, name, email }, accessToken, refreshToken });
+    const refreshCookieOptions = {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === "production",
+      sameSite: "lax" as const,
+      maxAge: expiresIn * 1000, 
+    };
+
+    const accessCookieOptions = {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === "production",
+      sameSite: "lax" as const,
+      maxAge: 15 * 60 * 1000, 
+    };
+
+    res.cookie("refreshToken", refreshToken, refreshCookieOptions);
+    res.cookie("accessToken", accessToken, accessCookieOptions);
+
+    res.status(201).json({ user: { name, email } });
   } catch (err: any) {
     handleError(res, err, "Signup failed");
   }
@@ -52,12 +71,31 @@ export const login = async (req: Request, res: Response) => {
     const accessToken = jwt.sign({ userId: user.id }, ACCESS_TOKEN_SECRET, { expiresIn: "15m" });
     const refreshToken = jwt.sign({ userId: user.id }, REFRESH_TOKEN_SECRET, { expiresIn: "7d" });
 
+    const tokenHash = await bcrypt.hash(refreshToken, 12);
+
     const expiresIn = 60 * 60 * 24 * 30; 
     const expiresAt = new Date(Date.now() + expiresIn * 1000);
 
-    await prisma.refreshToken.create({ data: { tokenHash: refreshToken, userId: user.id, expiresAt } });
+    await prisma.refreshToken.create({ data: { tokenHash, userId: user.id, expiresAt } });
 
-    res.json({ user: { id: user.id, name: user.name, email: user.email }, accessToken, refreshToken });
+    const refreshCookieOptions = {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === "production",
+      sameSite: "lax" as const,
+      maxAge: expiresIn * 1000, 
+    };
+
+    const accessCookieOptions = {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === "production",
+      sameSite: "lax" as const,
+      maxAge: 15 * 60 * 1000, 
+    };
+
+    res.cookie("refreshToken", refreshToken, refreshCookieOptions);
+    res.cookie("accessToken", accessToken, accessCookieOptions);
+
+    res.json({ user: { name: user.name, email: user.email } });
   } catch (err: any) {
     handleError(res, err, "Login failed");
   }

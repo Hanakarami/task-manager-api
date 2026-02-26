@@ -3,6 +3,7 @@ import bcrypt from "bcrypt";
 import jwt from "jsonwebtoken";
 import type{ Request, Response } from "express";
 import { handleError } from "../helpers/errorHandler.js";
+import type{ AuthRequest } from "../middlewares/isLogin.js";
 
 const prisma = new PrismaClient();
 
@@ -98,5 +99,45 @@ export const login = async (req: Request, res: Response) => {
     res.json({ user: { name: user.name, email: user.email } });
   } catch (err: any) {
     handleError(res, err, "Login failed");
+  }
+};
+
+export const logOut = async (req: AuthRequest, res: Response) => {
+  try {
+
+    const refreshToken = req.cookies.refreshToken;
+
+    if (refreshToken) {
+
+      const tokens = await prisma.refreshToken.findMany({
+        where: {
+          userId: req.user!.id,
+        },
+      });
+
+      for (const token of tokens) {
+        const isMatch = await bcrypt.compare(refreshToken, token.tokenHash);
+
+        if (isMatch) {
+          await prisma.refreshToken.delete({
+            where: {
+              id: token.id,
+            },
+          });
+
+          break;
+        }
+      }
+    }
+
+    res.clearCookie("accessToken");
+    res.clearCookie("refreshToken");
+
+    res.status(200).json({
+      message: "Logged out successfully",
+    });
+
+  } catch (err: any) {
+    handleError(res, err, "Logout failed");
   }
 };

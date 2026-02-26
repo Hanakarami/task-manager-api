@@ -1,6 +1,7 @@
 import type{ Request, Response, NextFunction } from "express";
 import jwt from "jsonwebtoken";
 import { handleError } from "../helpers/errorHandler.js";
+import { log } from "node:console";
 
 const ACCESS_TOKEN_SECRET = process.env.ACCESS_TOKEN_SECRET!;
 
@@ -26,7 +27,7 @@ export const requireAuth = (
 
     const decoded = jwt.verify(token, ACCESS_TOKEN_SECRET) as {
       userId: string;
-    };
+    };    
 
     req.user = {
       id: decoded.userId,

@@ -21,9 +21,22 @@ model Task {
 }
 
 model User {
-  id        Int      @id @default(autoincrement())
+  id        String         @id @default(uuid())
   name      String
-  email     String   @unique
+  email     String         @unique
   password  String
+  tokens    RefreshToken[]
+  createdAt DateTime       @default(now())
+  updatedAt DateTime @default(now()) @updatedAt
+}
+
+model RefreshToken {
+  id        String   @id @default(uuid())
+  tokenHash String   @unique
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  expiresAt DateTime
   createdAt DateTime @default(now())
+
+  @@index([userId])
 }

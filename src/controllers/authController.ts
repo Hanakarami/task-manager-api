@@ -141,3 +141,83 @@ export const logOut = async (req: AuthRequest, res: Response) => {
     handleError(res, err, "Logout failed");
   }
 };
+
+export const refreshAccessToken = async (req: Request, res: Response) => {
+  try {
+    const refreshToken = req.cookies.refreshToken;
+
+    if (!refreshToken) {
+      return res.status(401).json({
+        success: false,
+        message: "Refresh token missing",
+      });
+    }
+
+    let decoded: any;
+
+    try {
+      decoded = jwt.verify(
+        refreshToken,
+        process.env.REFRESH_TOKEN_SECRET!
+      );
+    } catch {
+      return res.status(401).json({
+        success: false,
+        message: "Invalid refresh token",
+      });
+    }
+
+    const userId = decoded.userId;
+
+    const tokens = await prisma.refreshToken.findMany({
+      where: {
+        userId,
+        expiresAt: {
+          gt: new Date(),
+        },
+      },
+    });
+
+    let validToken = null;
+
+    for (const token of tokens) {
+      const isMatch = await bcrypt.compare(
+        refreshToken,
+        token.tokenHash
+      );
+
+      if (isMatch) {
+        validToken = token;
+        break;
+      }
+    }
+
+    if (!validToken) {
+      return res.status(401).json({
+        success: false,
+        message: "Refresh token not recognized",
+      });
+    }
+
+    const newAccessToken = jwt.sign(
+      { userId },
+      ACCESS_TOKEN_SECRET,
+      { expiresIn: "15m" }
+    );
+
+    res.cookie("accessToken", newAccessToken, {
+      httpOnly: true,
+      secure: false, 
+      sameSite: "lax",
+      maxAge: 15 * 60 * 1000,
+    });
+
+    return res.status(200).json({
+      success: true,
+      message: "Access token refreshed",
+    });
+
+  } catch (err: any) {
+    handleError(res, err, "Refresh failed");
+  }
+};

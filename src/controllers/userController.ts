@@ -1,19 +1,44 @@
 import { PrismaClient } from "@prisma/client";
 import { handleError } from "../helpers/errorHandler.js";
-import bcrypt from "bcrypt";
+import type { Request, Response } from "express";
+import type { AuthRequest } from "../middlewares/isLogin.js";
 
 const prisma = new PrismaClient();
 
-export const getUsers = async (req: any, res: any) => {
+export const getMe = async (req: AuthRequest, res: Response) => {
   try {
-    const users = await prisma.user.findMany({
-      select : {
-        name : true,
-        email : true
-      }
+    const userId = req.user?.id;
+
+    if (!userId) {
+      return res.status(401).json({
+        success: false,
+        message: "Unauthorized",
+      });
+    }
+
+    const user = await prisma.user.findUnique({
+      where: { id: userId },
+      select: {
+        id: true,
+        name: true,
+        email: true,
+        createdAt: true,
+      },
     });
-    res.json(users);
-  } catch (err) {
-    handleError(res, err, "Failed to fetch users");
+
+    if (!user) {
+      return res.status(404).json({
+        success: false,
+        message: "User not found",
+      });
+    }
+
+    res.status(200).json({
+      success: true,
+      data: user,
+    });
+
+  } catch (err: any) {
+    handleError(res, err, "Failed to fetch user");
   }
 };

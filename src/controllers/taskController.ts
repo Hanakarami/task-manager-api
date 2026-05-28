@@ -131,6 +131,35 @@ export const updateTask = async (
   }
 };
 
-export const deleteTask = async (req: AuthRequest, res: Response) => {
+export const deleteTask = async ( req: AuthRequest , res: Response ) => {
+  try {
 
-}
+    const id = req.params.id as string;
+
+    const existingTask = await prisma.task.findFirst({
+      where: {
+        id,
+        userId: req.user!.id,
+      },
+    });
+
+    if (!existingTask) {
+      return res.status(404).json({
+        message: "Task not found",
+      });
+    }
+
+    await prisma.task.delete({
+      where: {
+        id,
+      },
+    });
+
+    return res.status(200).json({
+      message: "Task deleted successfully",
+    });
+
+  } catch (err) {
+    handleError(res, err, "Failed to delete task");
+  }
+};

@@ -52,9 +52,32 @@ export const getTasks = async ( req: AuthRequest , res: Response ) => {
   }
 };
 
-export const getTaskById = async (req: AuthRequest, res: Response) => {
+export const getTaskById = async ( req: AuthRequest , res: Response ) => {
+  try {
 
-}
+    const id = req.params.id as string;
+
+    const task = await prisma.task.findFirst({
+      where: {
+        id,
+        userId: req.user!.id,
+      },
+    });
+
+    if (!task) {
+      return res.status(404).json({
+        message: "Task not found",
+      });
+    }
+
+    return res.status(200).json({
+      task,
+    });
+
+  } catch (err) {
+    handleError(res, err, "Failed to fetch task");
+  }
+};
 
 export const updateTask = async (req: AuthRequest, res: Response) => {
 

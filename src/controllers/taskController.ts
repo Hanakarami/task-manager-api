@@ -30,9 +30,27 @@ export const createTask = async ( req: AuthRequest , res: Response ) => {
   }
 };
 
-export const getTasks = async (req: AuthRequest, res: Response) => {
+export const getTasks = async ( req: AuthRequest , res: Response ) => {
+  try {
 
-}
+    const tasks = await prisma.task.findMany({
+      where: {
+        userId: req.user!.id,
+      },
+
+      orderBy: {
+        createdAt: "desc",
+      },
+    });
+
+    res.status(200).json({
+      tasks,
+    });
+
+  } catch (err) {
+    handleError(res, err, "Failed to fetch tasks");
+  }
+};
 
 export const getTaskById = async (req: AuthRequest, res: Response) => {
 

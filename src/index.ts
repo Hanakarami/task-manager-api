@@ -5,6 +5,7 @@ import cookieParser from "cookie-parser";
 
 import userRoutes from "./routes/userRoutes.js";
 import authRoutes from "./routes/authRouter.js";
+import taskRoutes from "./routes/taskRouter.js";
 
 dotenv.config();
 const app = express();
@@ -15,6 +16,7 @@ app.use(cookieParser());
 
 app.use("/users", userRoutes);
 app.use("/auth", authRoutes);
+app.use("/tasks", taskRoutes);
 
 const PORT = process.env.PORT || 4000;
 app.listen(PORT, () => {

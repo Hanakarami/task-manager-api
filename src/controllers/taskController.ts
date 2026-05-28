@@ -79,9 +79,57 @@ export const getTaskById = async ( req: AuthRequest , res: Response ) => {
   }
 };
 
-export const updateTask = async (req: AuthRequest, res: Response) => {
+export const updateTask = async (
+  req: AuthRequest,
+  res: Response
+) => {
+  try {
 
-}
+    const id = req.params.id as string;
+
+    const { title, description, status, priority, dueDate } = req.body;
+
+    const existingTask = await prisma.task.findFirst({
+      where: {
+        id,
+        userId: req.user!.id,
+      },
+    });
+
+    if (!existingTask) {
+      return res.status(404).json({
+        message: "Task not found",
+      });
+    }
+
+    const updateData: any = {};
+
+    if (title !== undefined) updateData.title = title;
+    if (description !== undefined) updateData.description = description;
+    if (status !== undefined) updateData.status = status;
+    if (priority !== undefined) updateData.priority = priority;
+
+    if (dueDate !== undefined) {
+      updateData.dueDate = new Date(dueDate);
+    }
+
+    const updatedTask = await prisma.task.update({
+      where: {
+        id,
+      },
+
+      data: updateData,
+    });
+
+    return res.status(200).json({
+      message: "Task updated successfully",
+      task: updatedTask,
+    });
+
+  } catch (err) {
+    handleError(res, err, "Failed to update task");
+  }
+};
 
 export const deleteTask = async (req: AuthRequest, res: Response) => {
 
